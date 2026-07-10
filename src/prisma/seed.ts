@@ -607,7 +607,7 @@ async function main() {
   // SHOWTIMES
   // ==========================
 
-  const showtimes: any[] = [];
+  const showtimes: Showtime[] = [];
 
   const scheduleTemplates = [
     { hour: 9, minute: 0 },
@@ -620,15 +620,22 @@ async function main() {
 
   for (const movie of createdNowShowing) {
     for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-      for (const room of rooms) {
-        // random 3-5 suất mỗi ngày cho mỗi phòng
-        const totalSchedules = Math.floor(Math.random() * 3) + 3;
+      // tạo lịch cho từng rạp
+      for (const cinema of cinemas) {
+        // tất cả phòng của rạp
+        const cinemaRooms = rooms.filter((room) => room.cinemaId === cinema.id);
 
-        const shuffledSchedules = [...scheduleTemplates]
-          .sort(() => Math.random() - 0.5)
-          .slice(0, totalSchedules);
+        // lấy toàn bộ khung giờ (hoặc slice nếu muốn ít hơn)
+        const schedules = [...scheduleTemplates];
 
-        for (const schedule of shuffledSchedules) {
+        let roomIndex = 0;
+
+        for (const schedule of schedules) {
+          // chia vòng tròn qua các phòng
+          const room = cinemaRooms[roomIndex];
+
+          roomIndex = (roomIndex + 1) % cinemaRooms.length;
+
           const startTime = createDateAtHour(dayOffset, schedule.hour, schedule.minute);
 
           const endTime = new Date(startTime.getTime() + movie.duration * 60 * 1000);
