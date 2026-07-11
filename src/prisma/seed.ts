@@ -603,78 +603,135 @@ async function main() {
   }
 
   console.log('✅ MOVIES');
+
   // ==========================
   // SHOWTIMES
   // ==========================
 
   const showtimes: Showtime[] = [];
 
-  const scheduleTemplates = [
-    { hour: 9, minute: 0 },
-    { hour: 11, minute: 30 },
-    { hour: 14, minute: 0 },
-    { hour: 16, minute: 30 },
-    { hour: 19, minute: 0 },
-    { hour: 21, minute: 30 },
-  ];
+  // ==========================
+  // SHOWTIME TEMPLATE
+  // ==========================
+
+  const roomSchedules: Record<string, { hour: number; minute: number }[]> = {
+    'Phòng 1': [
+      { hour: 9, minute: 0 },
+      { hour: 11, minute: 45 },
+      { hour: 14, minute: 30 },
+      { hour: 17, minute: 15 },
+      { hour: 20, minute: 0 },
+    ],
+
+    'Phòng 2': [
+      { hour: 10, minute: 15 },
+      { hour: 13, minute: 15 },
+      { hour: 16, minute: 15 },
+      { hour: 19, minute: 15 },
+    ],
+
+    'Phòng 3': [
+      { hour: 12, minute: 0 },
+      { hour: 15, minute: 0 },
+      { hour: 18, minute: 0 },
+    ],
+
+    'Gold Class': [
+      { hour: 18, minute: 30 },
+      { hour: 21, minute: 0 },
+    ],
+  };
+
+  // ==========================
+  // CREATE SHOWTIMES
+  // ==========================
 
   for (const movie of createdNowShowing) {
+    // khoảng 35% phim được chiếu Gold
+    const hasGold = Math.random() < 0.35;
+
     for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-      // tạo lịch cho từng rạp
       for (const cinema of cinemas) {
-        // tất cả phòng của rạp
         const cinemaRooms = rooms.filter((room) => room.cinemaId === cinema.id);
 
-        // lấy toàn bộ khung giờ (hoặc slice nếu muốn ít hơn)
-        const schedules = [...scheduleTemplates];
-
-        let roomIndex = 0;
-        const roomOffsets: Record<string, number> = {
-          'Phòng 1': 0,
-          'Phòng 2': 20,
-          'Phòng 3': 40,
-          'Gold Class': 60,
-        };
-        for (const schedule of schedules) {
-          const room = cinemaRooms[roomIndex];
-
-          roomIndex = (roomIndex + 1) % cinemaRooms.length;
-
-          const startTime = createDateAtHour(dayOffset, schedule.hour, schedule.minute);
-
-          startTime.setMinutes(startTime.getMinutes() + (roomOffsets[room.name] ?? 0));
-
-          const endTime = new Date(startTime.getTime() + movie.duration * 60 * 1000);
-
-          const isWeekend = startTime.getDay() === 0 || startTime.getDay() === 6;
-
-          const isPrimeTime = schedule.hour >= 18;
-
-          let price = 90000;
-
-          if (isPrimeTime) {
-            price += 30000;
+        for (const room of cinemaRooms) {
+          // --------------------------
+          // Gold chỉ có một số phim
+          // --------------------------
+          if (room.name === 'Gold Class' && !hasGold) {
+            continue;
           }
 
-          if (isWeekend) {
-            price += 20000;
+          // --------------------------
+          // Xác suất mỗi phòng được chọn
+          // giống CGV hơn
+          // --------------------------
+
+          let chance = 1;
+
+          switch (room.name) {
+            case 'Phòng 1':
+              chance = 0.95;
+              break;
+
+            case 'Phòng 2':
+              chance = 0.7;
+              break;
+
+            case 'Phòng 3':
+              chance = 0.45;
+              break;
+
+            case 'Gold Class':
+              chance = 0.35;
+              break;
           }
 
-          if (room.name.toLowerCase().includes('gold')) {
-            price += 50000;
+          if (Math.random() > chance) {
+            continue;
           }
 
-          const showtime = await prisma.showtime.create({
-            data: {
-              movieId: movie.id,
-              roomId: room.id,
-              startTime,
-              endTime,
-              price,
-            },
-          });
+          const schedules = roomSchedules[room.name];
 
-          showtimes.push(showtime);
+          // mỗi phòng chỉ lấy 2-4 suất/ngày
+          const showCount = Math.min(schedules.length, Math.floor(Math.random() * 3) + 2);
+
+          const selectedSchedules = [...schedules]
+            .sort(() => Math.random() - 0.5)
+            .slice(0, showCount)
+            .sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute));
+
+          for (const schedule of selectedSchedules) {
+            const startTime = createDateAtHour(dayOffset, schedule.hour, schedule.minute);
+
+            const endTime = new Date(startTime.getTime() + movie.duration * 60 * 1000);
+
+            const isWeekend = startTime.getDay() === 0 || startTime.getDay() === 6;
+
+            const isPrimeTime = startTime.getHours() >= 18;
+
+            let price = 90000;
+
+            if (isPrimeTime) price += 30000;
+
+            if (isWeekend) price += 20000;
+
+            if (room.name === 'Gold Class') {
+              price += 70000;
+            }
+
+            const showtime = await prisma.showtime.create({
+              data: {
+                movieId: movie.id,
+                roomId: room.id,
+                startTime,
+                endTime,
+                price,
+              },
+            });
+
+            showtimes.push(showtime);
+          }
         }
       }
     }
