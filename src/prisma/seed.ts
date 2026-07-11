@@ -629,14 +629,20 @@ async function main() {
         const schedules = [...scheduleTemplates];
 
         let roomIndex = 0;
-
+        const roomOffsets: Record<string, number> = {
+          'Phòng 1': 0,
+          'Phòng 2': 20,
+          'Phòng 3': 40,
+          'Gold Class': 60,
+        };
         for (const schedule of schedules) {
-          // chia vòng tròn qua các phòng
           const room = cinemaRooms[roomIndex];
 
           roomIndex = (roomIndex + 1) % cinemaRooms.length;
 
           const startTime = createDateAtHour(dayOffset, schedule.hour, schedule.minute);
+
+          startTime.setMinutes(startTime.getMinutes() + (roomOffsets[room.name] ?? 0));
 
           const endTime = new Date(startTime.getTime() + movie.duration * 60 * 1000);
 
