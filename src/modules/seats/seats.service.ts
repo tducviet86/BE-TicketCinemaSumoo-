@@ -56,7 +56,17 @@ export class SeatsService {
   // get seats by room
   findByRoom(roomId: string) {
     return this.prisma.seat.findMany({
-      where: { roomId },
+      where: {
+        roomId,
+      },
+      orderBy: [
+        {
+          row: 'asc',
+        },
+        {
+          number: 'asc',
+        },
+      ],
     });
   }
 }

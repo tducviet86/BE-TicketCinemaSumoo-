@@ -23,7 +23,11 @@ export class ShowtimesService {
     return this.prisma.showtime.findMany({
       include: {
         movie: true,
-        room: true,
+        room: {
+          include: {
+            cinema: true,
+          },
+        },
       },
     });
   }
@@ -33,7 +37,11 @@ export class ShowtimesService {
       where: { id },
       include: {
         movie: true,
-        room: true,
+        room: {
+          include: {
+            cinema: true,
+          },
+        },
       },
     });
 
@@ -43,7 +51,6 @@ export class ShowtimesService {
 
     return showtime;
   }
-
   async update(id: string, dto: UpdateShowtimeDto) {
     await this.findOne(id);
 
@@ -70,28 +77,51 @@ export class ShowtimesService {
   // showtimes by movie
   findByMovie(movieId: string) {
     return this.prisma.showtime.findMany({
-      where: { movieId },
+      where: {
+        movieId,
+      },
+      include: {
+        room: {
+          include: {
+            cinema: true,
+          },
+        },
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
     });
   }
 
   // showtimes by room
   findByRoom(roomId: string) {
     return this.prisma.showtime.findMany({
-      where: { roomId },
+      where: {
+        roomId,
+      },
+      include: {
+        movie: true,
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
     });
   }
 
   // booked seats by showtime (VERY IMPORTANT)
-  getBookedSeats(showtimeId: string) {
-    return this.prisma.bookingSeat.findMany({
+  async getBookedSeats(showtimeId: string) {
+    const booked = await this.prisma.bookingSeat.findMany({
       where: {
         booking: {
           showtimeId,
+          status: 'PAID',
         },
       },
       select: {
         seatId: true,
       },
     });
+
+    return booked.map((item) => item.seatId);
   }
 }

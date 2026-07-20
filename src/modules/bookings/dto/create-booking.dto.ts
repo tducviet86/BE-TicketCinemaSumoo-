@@ -1,4 +1,4 @@
-import { IsString, IsArray, IsNumber } from 'class-validator';
+import { IsString, IsArray } from 'class-validator';
 
 export class CreateBookingDto {
   @IsString()
@@ -6,7 +6,4 @@ export class CreateBookingDto {
 
   @IsArray()
   seatIds!: string[];
-
-  @IsNumber()
-  totalPrice!: number;
 }

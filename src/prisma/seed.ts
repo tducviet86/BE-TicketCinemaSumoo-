@@ -8,6 +8,7 @@ import {
   PaymentStatus,
   Movie,
   Showtime,
+  DayOfWeek,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
@@ -268,6 +269,63 @@ async function main() {
 
   console.log(`🎟 Total Seats Created: ${allSeats.length}`);
 
+  // ==========================
+  // PRICE RULE
+  // ==========================
+
+  const priceTable: Record<string, Record<SeatType, number>> = {
+    MONDAY: {
+      NORMAL: 90000,
+      VIP: 120000,
+      COUPLE: 220000,
+    },
+    TUESDAY: {
+      NORMAL: 90000,
+      VIP: 120000,
+      COUPLE: 220000,
+    },
+    WEDNESDAY: {
+      NORMAL: 90000,
+      VIP: 120000,
+      COUPLE: 220000,
+    },
+    THURSDAY: {
+      NORMAL: 90000,
+      VIP: 120000,
+      COUPLE: 220000,
+    },
+    FRIDAY: {
+      NORMAL: 100000,
+      VIP: 130000,
+      COUPLE: 240000,
+    },
+    SATURDAY: {
+      NORMAL: 110000,
+      VIP: 140000,
+      COUPLE: 260000,
+    },
+    SUNDAY: {
+      NORMAL: 110000,
+      VIP: 140000,
+      COUPLE: 260000,
+    },
+  };
+  const rules: Prisma.PriceRuleCreateManyInput[] = [];
+
+  for (const day of Object.keys(priceTable)) {
+    for (const seat of Object.keys(priceTable[day]) as SeatType[]) {
+      rules.push({
+        name: `${day}-${seat}`,
+        dayOfWeek: day as DayOfWeek,
+        seatType: seat,
+        price: priceTable[day][seat],
+      });
+    }
+  }
+
+  await prisma.priceRule.createMany({
+    data: rules,
+  });
   // ==========================
   // MOVIES - NOW SHOWING
   // ==========================
@@ -706,30 +764,14 @@ async function main() {
 
             const endTime = new Date(startTime.getTime() + movie.duration * 60 * 1000);
 
-            const isWeekend = startTime.getDay() === 0 || startTime.getDay() === 6;
-
-            const isPrimeTime = startTime.getHours() >= 18;
-
-            let price = 90000;
-
-            if (isPrimeTime) price += 30000;
-
-            if (isWeekend) price += 20000;
-
-            if (room.name === 'Gold Class') {
-              price += 70000;
-            }
-
             const showtime = await prisma.showtime.create({
               data: {
                 movieId: movie.id,
                 roomId: room.id,
                 startTime,
                 endTime,
-                price,
               },
             });
-
             showtimes.push(showtime);
           }
         }
@@ -822,12 +864,45 @@ async function main() {
       },
       take: 100,
     });
+    const bookedSeatIds = await prisma.bookingSeat.findMany({
+      where: {
+        booking: {
+          showtimeId: showtime.id,
+        },
+      },
+      select: {
+        seatId: true,
+      },
+    });
 
-    const selectedSeats = roomSeats
+    const booked = bookedSeatIds.map((i) => i.seatId);
+
+    const availableSeats = roomSeats.filter((s) => !booked.includes(s.id));
+
+    if (availableSeats.length === 0) {
+      continue;
+    }
+    const selectedSeats = availableSeats
       .sort(() => Math.random() - 0.5)
       .slice(0, Math.floor(Math.random() * 4) + 1);
 
-    const totalPrice = selectedSeats.length * showtime.price;
+    let totalPrice = 0;
+
+    for (const seat of selectedSeats) {
+      switch (seat.type) {
+        case SeatType.NORMAL:
+          totalPrice += 90000;
+          break;
+
+        case SeatType.VIP:
+          totalPrice += 120000;
+          break;
+
+        case SeatType.COUPLE:
+          totalPrice += 220000;
+          break;
+      }
+    }
 
     const booking = await prisma.booking.create({
       data: {
