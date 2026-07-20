@@ -86,6 +86,7 @@ model Showtime {
   startTime DateTime
   endTime   DateTime
   bookings  Booking[]
+  
   movie     Movie     @relation(fields: [movieId], references: [id])
   room      Room      @relation(fields: [roomId], references: [id])
 }

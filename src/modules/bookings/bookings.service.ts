@@ -18,9 +18,14 @@ export class BookingsService {
     // check seat already booked
     const existingSeats = await this.prisma.bookingSeat.findMany({
       where: {
-        seatId: { in: dto.seatIds },
+        seatId: {
+          in: dto.seatIds,
+        },
         booking: {
           showtimeId: dto.showtimeId,
+          status: {
+            in: ['PENDING', 'PAID'],
+          },
         },
       },
     });

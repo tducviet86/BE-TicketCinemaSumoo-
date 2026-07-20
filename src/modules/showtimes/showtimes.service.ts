@@ -14,11 +14,9 @@ export class ShowtimesService {
         roomId: dto.roomId,
         startTime: new Date(dto.startTime),
         endTime: new Date(dto.endTime),
-        price: dto.price,
       },
     });
   }
-
   findAll() {
     return this.prisma.showtime.findMany({
       include: {
@@ -56,12 +54,14 @@ export class ShowtimesService {
 
     return this.prisma.showtime.update({
       where: { id },
+
       data: {
         movieId: dto.movieId,
         roomId: dto.roomId,
+
         startTime: dto.startTime ? new Date(dto.startTime) : undefined,
+
         endTime: dto.endTime ? new Date(dto.endTime) : undefined,
-        price: dto.price,
       },
     });
   }
