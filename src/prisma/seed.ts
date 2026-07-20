@@ -650,7 +650,7 @@ async function main() {
     // khoảng 35% phim được chiếu Gold
     const hasGold = Math.random() < 0.35;
 
-    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+    for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
       for (const cinema of cinemas) {
         const cinemaRooms = rooms.filter((room) => room.cinemaId === cinema.id);
 

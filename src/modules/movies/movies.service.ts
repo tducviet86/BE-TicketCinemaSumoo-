@@ -41,7 +41,17 @@ export class MoviesService {
       take,
       include: {
         genres: { include: { genre: true } },
-        showtimes: true,
+        showtimes: {
+          where: {
+            startTime: {
+              gte: new Date(),
+            },
+          },
+          take: 5,
+          orderBy: {
+            startTime: 'asc',
+          },
+        },
       },
     });
   }
@@ -53,26 +63,53 @@ export class MoviesService {
       where: {
         showtimes: {
           some: {
-            startTime: { gte: now },
+            startTime: {
+              gte: now,
+            },
           },
         },
       },
       include: {
-        genres: { include: { genre: true } },
-        showtimes: true,
+        genres: {
+          include: {
+            genre: true,
+          },
+        },
+        showtimes: {
+          where: {
+            startTime: {
+              gte: now,
+            },
+          },
+          orderBy: {
+            startTime: 'asc',
+          },
+        },
+      },
+      orderBy: {
+        rating: 'desc',
       },
     });
   }
 
   async findUpcoming() {
+    const now = new Date();
+
     return this.prisma.movie.findMany({
       where: {
-        showtimes: {
-          none: {},
+        releaseDate: {
+          gt: now,
         },
       },
       include: {
-        genres: { include: { genre: true } },
+        genres: {
+          include: {
+            genre: true,
+          },
+        },
+      },
+      orderBy: {
+        releaseDate: 'asc',
       },
     });
   }
@@ -83,6 +120,13 @@ export class MoviesService {
         title: {
           contains: keyword,
           mode: 'insensitive',
+        },
+      },
+      include: {
+        genres: {
+          include: {
+            genre: true,
+          },
         },
       },
     });
@@ -103,9 +147,21 @@ export class MoviesService {
 
   async getShowtimes(movieId: string) {
     return this.prisma.showtime.findMany({
-      where: { movieId },
+      where: {
+        movieId,
+        startTime: {
+          gte: new Date(),
+        },
+      },
       include: {
-        room: true,
+        room: {
+          include: {
+            cinema: true,
+          },
+        },
+      },
+      orderBy: {
+        startTime: 'asc',
       },
     });
   }
@@ -120,6 +176,14 @@ export class MoviesService {
           },
         },
         showtimes: {
+          where: {
+            startTime: {
+              gte: new Date(),
+            },
+          },
+          orderBy: {
+            startTime: 'asc',
+          },
           include: {
             room: {
               include: {
@@ -165,6 +229,13 @@ export class MoviesService {
         trailerUrl: dto.trailerUrl,
         language: dto.language,
         releaseDate: dto.releaseDate ? new Date(dto.releaseDate) : undefined,
+      },
+      include: {
+        genres: {
+          include: {
+            genre: true,
+          },
+        },
       },
     });
   }
