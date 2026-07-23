@@ -17,6 +17,7 @@ export class ShowtimesService {
       },
     });
   }
+
   findAll() {
     return this.prisma.showtime.findMany({
       include: {
@@ -49,18 +50,16 @@ export class ShowtimesService {
 
     return showtime;
   }
+
   async update(id: string, dto: UpdateShowtimeDto) {
     await this.findOne(id);
 
     return this.prisma.showtime.update({
       where: { id },
-
       data: {
         movieId: dto.movieId,
         roomId: dto.roomId,
-
         startTime: dto.startTime ? new Date(dto.startTime) : undefined,
-
         endTime: dto.endTime ? new Date(dto.endTime) : undefined,
       },
     });
@@ -74,7 +73,7 @@ export class ShowtimesService {
     });
   }
 
-  // showtimes by movie
+  // Showtimes by movie
   findByMovie(movieId: string) {
     return this.prisma.showtime.findMany({
       where: {
@@ -93,7 +92,7 @@ export class ShowtimesService {
     });
   }
 
-  // showtimes by room
+  // Showtimes by room
   findByRoom(roomId: string) {
     return this.prisma.showtime.findMany({
       where: {
@@ -108,14 +107,14 @@ export class ShowtimesService {
     });
   }
 
-  // booked seats by showtime (VERY IMPORTANT)
+  // Booked seat ids
   async getBookedSeats(showtimeId: string) {
     const booked = await this.prisma.bookingSeat.findMany({
       where: {
         booking: {
           showtimeId,
           status: {
-            in: ['PAID', 'CANCELLED', 'PENDING'],
+            in: ['PAID', 'PENDING'],
           },
         },
       },
@@ -126,14 +125,18 @@ export class ShowtimesService {
 
     return booked.map((item) => item.seatId);
   }
+
+  // Seat Map (Movie + Cinema + Room + Showtime + Seats)
   async getSeatMap(showtimeId: string) {
     const showtime = await this.prisma.showtime.findUnique({
       where: {
         id: showtimeId,
       },
       include: {
+        movie: true,
         room: {
           include: {
+            cinema: true,
             seats: {
               orderBy: [
                 {
@@ -160,7 +163,6 @@ export class ShowtimesService {
           status: 'PAID',
         },
       },
-
       select: {
         seatId: true,
       },
@@ -168,10 +170,26 @@ export class ShowtimesService {
 
     const bookedSet = new Set(booked.map((item) => item.seatId));
 
-    return showtime.room.seats.map((seat) => ({
-      ...seat,
+    return {
+      movie: showtime.movie,
 
-      status: bookedSet.has(seat.id) ? 'BOOKED' : 'AVAILABLE',
-    }));
+      cinema: showtime.room.cinema,
+
+      room: {
+        id: showtime.room.id,
+        name: showtime.room.name,
+      },
+
+      showtime: {
+        id: showtime.id,
+        startTime: showtime.startTime,
+        endTime: showtime.endTime,
+      },
+
+      seats: showtime.room.seats.map((seat) => ({
+        ...seat,
+        status: bookedSet.has(seat.id) ? 'BOOKED' : 'AVAILABLE',
+      })),
+    };
   }
 }
