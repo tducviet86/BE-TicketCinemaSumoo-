@@ -114,7 +114,9 @@ export class ShowtimesService {
       where: {
         booking: {
           showtimeId,
-          status: 'PAID',
+          status: {
+            in: ['PAID', 'CANCELLED', 'PENDING'],
+          },
         },
       },
       select: {
@@ -123,5 +125,53 @@ export class ShowtimesService {
     });
 
     return booked.map((item) => item.seatId);
+  }
+  async getSeatMap(showtimeId: string) {
+    const showtime = await this.prisma.showtime.findUnique({
+      where: {
+        id: showtimeId,
+      },
+      include: {
+        room: {
+          include: {
+            seats: {
+              orderBy: [
+                {
+                  row: 'asc',
+                },
+                {
+                  number: 'asc',
+                },
+              ],
+            },
+          },
+        },
+      },
+    });
+
+    if (!showtime) {
+      throw new NotFoundException('Showtime not found');
+    }
+
+    const booked = await this.prisma.bookingSeat.findMany({
+      where: {
+        booking: {
+          showtimeId,
+          status: 'PAID',
+        },
+      },
+
+      select: {
+        seatId: true,
+      },
+    });
+
+    const bookedSet = new Set(booked.map((item) => item.seatId));
+
+    return showtime.room.seats.map((seat) => ({
+      ...seat,
+
+      status: bookedSet.has(seat.id) ? 'BOOKED' : 'AVAILABLE',
+    }));
   }
 }

@@ -24,17 +24,33 @@ export class RoomsService {
   }
 
   async findOne(id: string) {
-    return this.prisma.showtime.findUnique({
+    const room = await this.prisma.room.findUnique({
       where: { id },
       include: {
-        movie: true,
-        room: {
-          include: {
-            cinema: true,
+        cinema: true,
+        seats: {
+          orderBy: [
+            {
+              row: 'asc',
+            },
+            {
+              number: 'asc',
+            },
+          ],
+        },
+        showtimes: {
+          orderBy: {
+            startTime: 'asc',
           },
         },
       },
     });
+
+    if (!room) {
+      throw new NotFoundException('Room not found');
+    }
+
+    return room;
   }
 
   async update(id: string, dto: UpdateRoomDto) {

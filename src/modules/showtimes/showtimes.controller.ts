@@ -8,17 +8,13 @@ import { Roles } from '../../common/decorators/roles.decorator';
 
 @Controller('showtimes')
 export class ShowtimesController {
-  constructor(private showtimesService: ShowtimesService) {}
+  constructor(private readonly showtimesService: ShowtimesService) {}
 
-  // Public
+  // ================= PUBLIC =================
+
   @Get()
   findAll() {
     return this.showtimesService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.showtimesService.findOne(id);
   }
 
   @Get('movie/:movieId')
@@ -31,12 +27,25 @@ export class ShowtimesController {
     return this.showtimesService.findByRoom(roomId);
   }
 
+  // Danh sách ghế đã đặt
   @Get(':id/booked-seats')
   getBookedSeats(@Param('id') id: string) {
     return this.showtimesService.getBookedSeats(id);
   }
 
-  // ADMIN
+  // Sơ đồ ghế đầy đủ (AVAILABLE / BOOKED)
+  @Get(':id/seats')
+  getSeatMap(@Param('id') id: string) {
+    return this.showtimesService.getSeatMap(id);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.showtimesService.findOne(id);
+  }
+
+  // ================= ADMIN =================
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Post()
@@ -44,7 +53,6 @@ export class ShowtimesController {
     return this.showtimesService.create(dto);
   }
 
-  // ADMIN
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Patch(':id')
@@ -52,7 +60,6 @@ export class ShowtimesController {
     return this.showtimesService.update(id, dto);
   }
 
-  // ADMIN
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Delete(':id')
