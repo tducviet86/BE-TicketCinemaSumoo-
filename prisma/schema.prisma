@@ -68,13 +68,21 @@ model Room {
 }
 
 model Seat {
-  id           String        @id @default(uuid())
+  id           String   @id @default(uuid())
+
+  code         String
   row          String
   number       Int
+
   type         SeatType
+
+  price        Int
+
   roomId       String
+
   bookingSeats BookingSeat[]
-  room         Room          @relation(fields: [roomId], references: [id])
+
+  room         Room @relation(fields: [roomId], references: [id])
 
   @@unique([roomId, row, number])
 }

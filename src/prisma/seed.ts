@@ -242,18 +242,43 @@ async function main() {
   // SEATS
   // ==========================
 
-  const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  // ==========================
+  // SEATS
+  // ==========================
+
+  const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
   for (const room of rooms) {
     const seats: Prisma.SeatCreateManyInput[] = [];
 
     for (const row of rows) {
       for (let number = 1; number <= 10; number++) {
+        let type: SeatType;
+        let price: number;
+
+        // Couple
+        if (row === 'H') {
+          type = SeatType.COUPLE;
+          price = 220000;
+        }
+        // VIP
+        else if (row === 'D' || row === 'E') {
+          type = SeatType.VIP;
+          price = 120000;
+        }
+        // Normal
+        else {
+          type = SeatType.NORMAL;
+          price = 90000;
+        }
+
         seats.push({
-          roomId: room.id,
+          code: `${row}${number}`,
           row,
           number,
-          type: row === 'I' || row === 'J' ? SeatType.VIP : SeatType.NORMAL,
+          type,
+          price,
+          roomId: room.id,
         });
       }
     }

@@ -9,7 +9,14 @@ export class SeatsService {
 
   create(dto: CreateSeatDto) {
     return this.prisma.seat.create({
-      data: dto,
+      data: {
+        code: dto.code,
+        row: dto.row,
+        number: dto.number,
+        type: dto.type,
+        price: dto.price,
+        roomId: dto.roomId,
+      },
     });
   }
 
