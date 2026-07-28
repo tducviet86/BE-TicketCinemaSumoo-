@@ -13,6 +13,7 @@ import { ShowtimesModule } from './modules/showtimes/showtimes.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
+import { SeatLocksModule } from 'src/modules/seat-locks/seat-locks.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { TicketsModule } from './modules/tickets/tickets.module';
     BookingsModule,
     PaymentsModule,
     TicketsModule,
+    SeatLocksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

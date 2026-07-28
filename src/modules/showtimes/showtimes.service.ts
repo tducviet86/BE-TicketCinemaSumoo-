@@ -128,6 +128,17 @@ export class ShowtimesService {
 
   // Seat Map (Movie + Cinema + Room + Showtime + Seats)
   async getSeatMap(showtimeId: string) {
+    const now = new Date();
+    
+    // Xóa lock hết hạn
+    await this.prisma.seatLock.deleteMany({
+      where: {
+        expiresAt: {
+          lt: now,
+        },
+      },
+    });
+
     const showtime = await this.prisma.showtime.findUnique({
       where: {
         id: showtimeId,
@@ -156,7 +167,11 @@ export class ShowtimesService {
       throw new NotFoundException('Showtime not found');
     }
 
-    const booked = await this.prisma.bookingSeat.findMany({
+    /*
+     * Ghế đã thanh toán
+     */
+
+    const bookedSeats = await this.prisma.bookingSeat.findMany({
       where: {
         booking: {
           showtimeId,
@@ -168,7 +183,25 @@ export class ShowtimesService {
       },
     });
 
-    const bookedSet = new Set(booked.map((item) => item.seatId));
+    const bookedSet = new Set(bookedSeats.map((i) => i.seatId));
+
+    /*
+     * Ghế đang lock
+     */
+
+    const lockedSeats = await this.prisma.seatLock.findMany({
+      where: {
+        showtimeId,
+        expiresAt: {
+          gt: now,
+        },
+      },
+      select: {
+        seatId: true,
+      },
+    });
+
+    const lockedSet = new Set(lockedSeats.map((i) => i.seatId));
 
     return {
       movie: showtime.movie,
@@ -186,10 +219,20 @@ export class ShowtimesService {
         endTime: showtime.endTime,
       },
 
-      seats: showtime.room.seats.map((seat) => ({
-        ...seat,
-        status: bookedSet.has(seat.id) ? 'BOOKED' : 'AVAILABLE',
-      })),
+      seats: showtime.room.seats.map((seat) => {
+        let status: 'AVAILABLE' | 'BOOKED' | 'LOCKED' = 'AVAILABLE';
+
+        if (bookedSet.has(seat.id)) {
+          status = 'BOOKED';
+        } else if (lockedSet.has(seat.id)) {
+          status = 'LOCKED';
+        }
+
+        return {
+          ...seat,
+          status,
+        };
+      }),
     };
   }
 }
