@@ -37,7 +37,7 @@ export class PaymentsService {
     await this.prisma.ticket.create({
       data: {
         bookingId: dto.bookingId,
-        qrCode: `TICKET-${dto.bookingId}`,
+        ticketCode: `TICKET-${dto.bookingId}`,
       },
     });
 

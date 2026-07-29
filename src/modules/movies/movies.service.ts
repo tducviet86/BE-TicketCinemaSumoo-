@@ -14,20 +14,21 @@ export class MoviesService {
         description: dto.description,
         duration: dto.duration,
         releaseDate: dto.releaseDate ? new Date(dto.releaseDate) : undefined,
+
         language: dto.language,
         trailerUrl: dto.trailerUrl,
         posterUrl: dto.posterUrl,
         rating: dto.rating,
+
+        ageRating: dto.ageRating,
+
         genres: dto.genreIds
           ? {
-              create: dto.genreIds.map((genreId) => ({
-                genre: { connect: { id: genreId } },
+              create: dto.genreIds.map((id) => ({
+                genreId: id,
               })),
             }
           : undefined,
-      },
-      include: {
-        genres: { include: { genre: true } },
       },
     });
   }

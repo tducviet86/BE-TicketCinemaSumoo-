@@ -34,6 +34,7 @@ model Movie {
   createdAt   DateTime     @default(now())
   genres      MovieGenre[]
   showtimes   Showtime[]
+  ageRating AgeRating
 }
 
 model Genre {
@@ -77,7 +78,7 @@ model Seat {
 
   type         SeatType
 
-  price        Int
+  price        Float
 
   roomId       String
 
@@ -86,6 +87,7 @@ model Seat {
   room         Room @relation(fields: [roomId], references: [id])
 
   @@unique([roomId, row, number])
+   seatLocks SeatLock[]
 }
 
 model Showtime {
@@ -95,7 +97,7 @@ model Showtime {
   startTime DateTime
   endTime   DateTime
   bookings  Booking[]
-  
+  seatLocks SeatLock[]
   movie     Movie     @relation(fields: [movieId], references: [id])
   room      Room      @relation(fields: [roomId], references: [id])
 }
@@ -128,27 +130,36 @@ model Booking {
 }
 
 model BookingSeat {
-  id        String  @id @default(uuid())
+
+  id String @id @default(uuid())
+
   bookingId String
-  seatId    String
-  booking   Booking @relation(fields: [bookingId], references: [id])
-  seat      Seat    @relation(fields: [seatId], references: [id])
+
+  seatId String
+
+  price Float
+
+  booking Booking @relation(fields:[bookingId],references:[id])
+
+  seat Seat @relation(fields:[seatId],references:[id])
+@@unique([bookingId, seatId])
 }
 
 model SeatLock {
   id         String   @id @default(uuid())
 
   userId     String
-
   seatId     String
-
   showtimeId String
 
   expiresAt  DateTime
-
   createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+
+  seat Seat @relation(fields: [seatId], references: [id])
+
+  showtime Showtime @relation(fields: [showtimeId], references: [id])
 
   @@unique([seatId, showtimeId])
   @@index([expiresAt])
@@ -168,7 +179,7 @@ model Payment {
 model Ticket {
   id        String   @id @default(uuid())
   bookingId String   @unique
-  qrCode    String?
+  ticketCode String @unique
   checkedIn Boolean  @default(false)
   createdAt DateTime @default(now())
   booking   Booking  @relation(fields: [bookingId], references: [id])
@@ -211,4 +222,12 @@ enum DayOfWeek{
   FRIDAY
   SATURDAY
   SUNDAY
+}
+enum AgeRating{
+  P
+  K
+  T13
+  T16
+  T18
+  C18
 }

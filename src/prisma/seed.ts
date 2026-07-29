@@ -242,10 +242,6 @@ async function main() {
   // SEATS
   // ==========================
 
-  // ==========================
-  // SEATS
-  // ==========================
-
   const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
   for (const room of rooms) {
@@ -652,7 +648,7 @@ async function main() {
         trailerUrl: movie.trailerUrl,
         posterUrl: movie.posterUrl,
         rating: movie.rating,
-
+        ageRating: 'T16',
         genres: {
           create: movie.genres.map((genreId) => ({
             genreId,
@@ -675,7 +671,7 @@ async function main() {
         trailerUrl: movie.trailerUrl,
         posterUrl: movie.posterUrl,
         rating: movie.rating,
-
+        ageRating: 'T16',
         genres: {
           create: movie.genres.map((genreId) => ({
             genreId,
@@ -938,6 +934,7 @@ async function main() {
         seats: {
           create: selectedSeats.map((seat) => ({
             seatId: seat.id,
+            price: seat.price,
           })),
         },
       },
@@ -985,7 +982,7 @@ async function main() {
       data: {
         bookingId: booking.id,
 
-        qrCode: `SUMOO-${booking.id}`,
+        ticketCode: `SUMOO-${booking.id}`,
 
         checkedIn: Math.random() > 0.5,
       },

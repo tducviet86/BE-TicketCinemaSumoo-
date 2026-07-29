@@ -1,5 +1,6 @@
 import { IsString, IsInt, IsOptional, IsArray, IsNumber, IsDateString } from 'class-validator';
-
+import { AgeRating } from '@prisma/client';
+import { IsEnum } from 'class-validator';
 export class CreateMovieDto {
   @IsString()
   title!: string;
@@ -18,6 +19,9 @@ export class CreateMovieDto {
   @IsOptional()
   @IsString()
   language?: string;
+
+  @IsEnum(AgeRating as object)
+  ageRating!: AgeRating;
 
   @IsOptional()
   @IsString()

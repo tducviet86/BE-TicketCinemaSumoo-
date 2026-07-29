@@ -6,5 +6,5 @@ export class CreateTicketDto {
 
   @IsOptional()
   @IsString()
-  qrCode?: string;
+  ticketCode?: string;
 }

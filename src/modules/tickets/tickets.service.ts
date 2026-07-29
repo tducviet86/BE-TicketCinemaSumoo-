@@ -10,7 +10,7 @@ export class TicketsService {
     return this.prisma.ticket.create({
       data: {
         bookingId: dto.bookingId,
-        qrCode: dto.qrCode || `TICKET-${dto.bookingId}`,
+        ticketCode: dto.ticketCode || `TICKET-${dto.bookingId}`,
       },
     });
   }
