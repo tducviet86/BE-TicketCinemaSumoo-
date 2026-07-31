@@ -13,11 +13,11 @@ export class SeatLocksController {
 
   @Post()
   lockSeats(@Req() req, @Body() dto: CreateSeatLockDto) {
-    return this.seatLockService.lockSeats(req.user.sub, dto);
+    return this.seatLockService.lockSeats(req.user.id, dto);
   }
 
   @Delete()
   unlockSeats(@Req() req, @Body() dto: CreateSeatLockDto) {
-    return this.seatLockService.unlockSeats(req.user.sub, dto);
+    return this.seatLockService.unlockSeats(req.user.id, dto);
   }
 }

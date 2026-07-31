@@ -13,17 +13,17 @@ export class BookingsController {
 
   @Post('confirm')
   confirm(@Req() req, @Body() dto: ConfirmBookingDto) {
-    return this.bookingService.confirmBooking(req.user.sub, dto);
+    return this.bookingService.confirmBooking(req.user.id, dto);
   }
 
   @Post()
   create(@Req() req, @Body() dto: CreateBookingDto) {
-    return this.bookingService.createBooking(req.user.sub, dto);
+    return this.bookingService.createBooking(req.user.id, dto);
   }
 
   @Get('me')
   getMine(@Req() req) {
-    return this.bookingService.getMyBookings(req.user.sub);
+    return this.bookingService.getMyBookings(req.user.id);
   }
 
   @Get(':id')
