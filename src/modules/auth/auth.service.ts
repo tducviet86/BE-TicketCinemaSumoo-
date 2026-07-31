@@ -73,13 +73,36 @@ export class AuthService {
   }
 
   async generateTokens(userId: string, email: string, role: string) {
-    const payload = { sub: userId, email, role };
+    const accessSecret = process.env.JWT_ACCESS_SECRET;
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
 
-    const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '15m',
-    });
+    if (!accessSecret || !refreshSecret) {
+      throw new Error('JWT secrets are not configured');
+    }
 
-    const refreshToken = await this.jwtService.signAsync({ sub: userId }, { expiresIn: '7d' });
+    const accessToken = await this.jwtService.signAsync(
+      {
+        sub: userId,
+        email,
+        role,
+        type: 'access',
+      },
+      {
+        secret: accessSecret,
+        expiresIn: '15m',
+      },
+    );
+
+    const refreshToken = await this.jwtService.signAsync(
+      {
+        sub: userId,
+        type: 'refresh',
+      },
+      {
+        secret: refreshSecret,
+        expiresIn: '7d',
+      },
+    );
 
     await this.prisma.user.update({
       where: { id: userId },
@@ -93,26 +116,49 @@ export class AuthService {
   }
 
   async refreshToken(token: string) {
+    const accessSecret = process.env.JWT_ACCESS_SECRET;
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
+
+    if (!accessSecret || !refreshSecret) {
+      throw new Error('JWT secrets are not configured');
+    }
+
     try {
-      const payload = await this.jwtService.verifyAsync(token);
+      const payload = await this.jwtService.verifyAsync<{
+        sub: string;
+        type: string;
+      }>(token, {
+        secret: refreshSecret,
+      });
+
+      if (payload.type !== 'refresh') {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
 
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
       });
 
       if (!user || user.refreshToken !== token) {
-        throw new UnauthorizedException();
+        throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const newAccessToken = await this.jwtService.signAsync(
-        { sub: user.id, email: user.email, role: user.role },
-        { expiresIn: '15m' },
+      const accessToken = await this.jwtService.signAsync(
+        {
+          sub: user.id,
+          email: user.email,
+          role: user.role,
+          type: 'access',
+        },
+        {
+          secret: accessSecret,
+          expiresIn: '15m',
+        },
       );
 
-      return { accessToken: newAccessToken };
-    } catch (error) {
-      console.error(error);
-      throw new UnauthorizedException();
+      return { accessToken };
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
 

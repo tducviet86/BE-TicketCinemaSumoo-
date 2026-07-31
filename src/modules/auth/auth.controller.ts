@@ -30,13 +30,13 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   logout(@Req() req) {
-    return this.authService.logout(req.user.sub);
+    return this.authService.logout(req.user.id);
   }
 
   // Get profile
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   profile(@Req() req) {
-    return this.authService.getProfile(req.user.sub);
+    return this.authService.getProfile(req.user.id);
   }
 }
