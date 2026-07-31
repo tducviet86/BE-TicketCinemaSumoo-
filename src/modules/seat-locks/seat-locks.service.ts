@@ -65,16 +65,13 @@ export class SeatLocksService {
           throw new BadRequestException('Seat already booked');
         }
 
-        // Locks owned by the current user are valid and can be updated.
-        // Only another user's active lock is a conflict.
+        // Any active lock is a conflict, including a previous lock created by
+        // the same user. A seat cannot belong to two booking attempts.
         const conflictingLock = await tx.seatLock.findFirst({
           where: {
             showtimeId: dto.showtimeId,
             seatId: {
               in: dto.seatIds,
-            },
-            userId: {
-              not: userId,
             },
             expiresAt: {
               gt: now,
@@ -86,62 +83,22 @@ export class SeatLocksService {
           throw new BadRequestException('Seat already locked');
         }
 
+        // Each booking attempt starts a separate 15-minute lock.
         const expires = new Date(now.getTime() + 15 * 60 * 1000);
 
-        // Synchronize this user's lock set with the current selection.
-        await tx.seatLock.deleteMany({
-          where: {
+        await tx.seatLock.createMany({
+          data: dto.seatIds.map((seatId) => ({
             userId,
+            seatId,
             showtimeId: dto.showtimeId,
-            seatId: {
-              notIn: dto.seatIds,
-            },
-          },
-        });
-
-        await tx.seatLock.updateMany({
-          where: {
-            userId,
-            showtimeId: dto.showtimeId,
-            seatId: {
-              in: dto.seatIds,
-            },
-          },
-          data: {
             expiresAt: expires,
-          },
+          })),
         });
-
-        const existingLocks = await tx.seatLock.findMany({
-          where: {
-            userId,
-            showtimeId: dto.showtimeId,
-            seatId: {
-              in: dto.seatIds,
-            },
-          },
-          select: {
-            seatId: true,
-          },
-        });
-
-        const existingSeatIds = new Set(existingLocks.map((lock) => lock.seatId));
-        const newSeatIds = dto.seatIds.filter((seatId) => !existingSeatIds.has(seatId));
-
-        if (newSeatIds.length > 0) {
-          await tx.seatLock.createMany({
-            data: newSeatIds.map((seatId) => ({
-              userId,
-              seatId,
-              showtimeId: dto.showtimeId,
-              expiresAt: expires,
-            })),
-          });
-        }
 
         return {
           success: true,
           expiresAt: expires,
+          seatIds: dto.seatIds,
         };
       });
     } catch (error) {
