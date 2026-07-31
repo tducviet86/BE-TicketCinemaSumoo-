@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsUUID } from 'class-validator';
+import { ArrayNotEmpty, ArrayUnique, IsArray, IsUUID } from 'class-validator';
 
 export class CreateSeatLockDto {
   @IsUUID()
@@ -6,6 +6,7 @@ export class CreateSeatLockDto {
 
   @IsArray()
   @ArrayNotEmpty()
+  @ArrayUnique()
   @IsUUID('4', {
     each: true,
   })

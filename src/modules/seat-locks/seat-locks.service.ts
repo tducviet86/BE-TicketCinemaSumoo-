@@ -72,7 +72,8 @@ export class SeatLocksService {
         throw new BadRequestException('Seat already locked');
       }
 
-      const expires = new Date(Date.now() + 5 * 60 * 1000);
+      // The database expiration is authoritative even if the client closes.
+      const expires = new Date(Date.now() + 4 * 60 * 1000);
 
       await tx.seatLock.createMany({
         data: dto.seatIds.map((seatId) => ({
