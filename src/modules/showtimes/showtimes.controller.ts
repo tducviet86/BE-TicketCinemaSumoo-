@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ShowtimesService } from './showtimes.service';
 import { CreateShowtimeDto } from './dto/create-showtime.dto';
 import { UpdateShowtimeDto } from './dto/update-showtime.dto';
@@ -35,8 +35,9 @@ export class ShowtimesController {
 
   // Sơ đồ ghế đầy đủ (AVAILABLE / BOOKED)
   @Get(':id/seats')
-  getSeatMap(@Param('id') id: string) {
-    return this.showtimesService.getSeatMap(id);
+  @UseGuards(JwtAuthGuard)
+  getSeatMap(@Param('id') id: string, @Req() req) {
+    return this.showtimesService.getSeatMap(id, req.user.id);
   }
 
   @Get(':id')

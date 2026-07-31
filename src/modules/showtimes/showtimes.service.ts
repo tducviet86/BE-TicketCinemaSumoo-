@@ -127,9 +127,9 @@ export class ShowtimesService {
   }
 
   // Seat Map (Movie + Cinema + Room + Showtime + Seats)
-  async getSeatMap(showtimeId: string) {
+  async getSeatMap(showtimeId: string, userId: string) {
     const now = new Date();
-    
+
     // Xóa lock hết hạn
     await this.prisma.seatLock.deleteMany({
       where: {
@@ -198,10 +198,12 @@ export class ShowtimesService {
       },
       select: {
         seatId: true,
+        userId: true,
       },
     });
 
     const lockedSet = new Set(lockedSeats.map((i) => i.seatId));
+    const heldByMeSet = new Set(lockedSeats.filter((lock) => lock.userId === userId).map((lock) => lock.seatId));
 
     return {
       movie: showtime.movie,
@@ -220,10 +222,12 @@ export class ShowtimesService {
       },
 
       seats: showtime.room.seats.map((seat) => {
-        let status: 'AVAILABLE' | 'BOOKED' | 'LOCKED' = 'AVAILABLE';
+        let status: 'AVAILABLE' | 'BOOKED' | 'LOCKED' | 'HELD_BY_ME' = 'AVAILABLE';
 
         if (bookedSet.has(seat.id)) {
           status = 'BOOKED';
+        } else if (heldByMeSet.has(seat.id)) {
+          status = 'HELD_BY_ME';
         } else if (lockedSet.has(seat.id)) {
           status = 'LOCKED';
         }
